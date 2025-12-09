@@ -309,8 +309,32 @@ class AdvancedCLIPTextEncode:
     CATEGORY = "conditioning/advanced"
 
     def encode(self, clip, text, token_normalization, weight_interpretation, affect_pooled='disable'):
-        embeddings_final, pooled = advanced_encode(clip, text, token_normalization, weight_interpretation, w_max=1.0,
+        if "BREAK" in text:
+            print(f"Implementation: BREAK detected in prompt, splitting into chunks...")
+            chunks = text.split("BREAK")
+            embeddings_list = []
+            pooled_first = None
+            
+            for chunk in chunks:
+                chunk = chunk.strip()
+                # Encode each chunk separately
+                emb, pool = advanced_encode(clip, chunk, token_normalization, weight_interpretation, w_max=1.0,
                                                    apply_to_pooled=affect_pooled == 'enable')
+                embeddings_list.append(emb)
+                if pooled_first is None:
+                    pooled_first = pool
+            
+            if embeddings_list:
+                embeddings_final = torch.cat(embeddings_list, dim=1)
+                pooled = pooled_first
+            else:
+                # Fallback if somehow chunks are empty but BREAK was present (logic corner case)
+                embeddings_final, pooled = advanced_encode(clip, text, token_normalization, weight_interpretation, w_max=1.0,
+                                                   apply_to_pooled=affect_pooled == 'enable')
+        else:
+            embeddings_final, pooled = advanced_encode(clip, text, token_normalization, weight_interpretation, w_max=1.0,
+                                                    apply_to_pooled=affect_pooled == 'enable')
+        
         return ([[embeddings_final, {"pooled_output": pooled}]],)
 
 
