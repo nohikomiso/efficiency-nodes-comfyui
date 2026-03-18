@@ -956,7 +956,7 @@ class TSC_KSampler:
                         rng_source
                     )  # this function monkey patches comfy.sample.prepare_noise
                     if cfg_denoiser:
-                        comfy.samplers.KSampler = smZ_cfg_denoiser.SDKSampler
+                        smZ_cfg_denoiser.register_hooks()
                     if add_seed_noise:
                         comfy.sample.prepare_noise = (
                             cg_mixed_seed_noise.get_mixed_noise_function(
